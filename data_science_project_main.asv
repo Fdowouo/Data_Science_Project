@@ -1,0 +1,100 @@
+%% Data Science Project
+
+%% Data description
+% Column 1: Sample index 
+% Column 2: Channel 1 : Raw EEG : sampled @ 2048 Hz 
+% Column 3: Channel 2 : Raw EEG : sampled @ 2048 Hz 
+% Column 4: Trigger data for EEG data : sampled @ 2048 Hz 
+% Column 5: Accelerometer 1 : X-axis : sampled @ 200 Hz 
+% Column 6: Accelerometer 1 : Y-axis : sampled @ 200 Hz 
+% Column 7: Accelerometer 1 : Z-axis : sampled @ 200 Hz 
+% Column 8: Accelerometer 2 : X-axis : sampled @ 200 Hz 
+% Column 9: Accelerometer 2 : Y-axis : sampled @ 200 Hz 
+% Column 10: Accelerometer 2 : Z-axis : sampled @ 200 Hz 
+% Column 11: Trigger data for accelerometer data : sampled @ 200 Hz
+% Loading the data
+
+%% Data Preprocessing
+clear, close all, clc;
+dirr = 'D:\Spring2017_CMU\Data Science\project\EEG-csv\' ;
+listname = dir(fullfile([dirr '*.csv']));
+% mode = 'ascend' ; 
+% name = {listname.name} ;
+[listname,index] = sort_nat( {listname.name}' ,'ascend' ) ;
+
+% y = downsample(x,n)
+ % the initial sampling rate is 2048 
+% however the eeg signal freaquency is around 8 to 16 hz so a sampling
+% frequency of 32Hz should be correct 
+%% loading the data
+tic ;
+eegData = [ ] ;
+eegCh1Data = [ ] ;
+eegCh2Data = [ ] ;
+len = length(listname) ;
+downRate = 64 ; 
+trunLen = 2^20  ; % truncated lenght of signal 
+for n = 1:len
+    tempData = csvread(listname{n}) ;
+    tempEEG= tempData(: , 2:3) ;
+    tempEEG = tempEEG(1:trunLen, :) ;
+    tempEEG = downsample(tempEEG,downRate) ;
+    tempEEG = normc(tempEEG) ;
+    eegData = [eegData, tempEEG ] ;
+    eegCh1Data = [eegCh1Data , tempEEG(:,1)] ;
+    eegCh2Data = [eegCh2Data , tempEEG(:,2)] ;
+    clear  tempData  tempEEG ;
+end
+toc ;
+%% Visualizing the plots
+t = 0: length(eegData) -1 ;
+
+%% channel 2 
+figure ;
+hold on
+for n = 1: len
+    plot(t, eegCh2Data(:,n)) ;
+end
+hold off;
+xlabel('sample') ;
+ylabel('amplitude')
+title('Normalized EEG plot channel2') ;
+
+% % channel one ploting , 
+% figure ;
+% hold on
+% for n = 1: len
+%     plot(t, eegCh1Data(:,n)) ;
+% end
+% hold off;
+% xlabel('sample') ;
+% ylabel('amplitude')
+% title('Normalized EEG plot channel1') ;
+% 
+% %% both  channel plotting 
+% figure ;
+% hold on
+% for n = 1: 2*len
+%     plot(t, eegData(:,n)) ;
+% end
+% hold off;
+% xlabel('sample') ;
+% ylabel('amplitude')
+% title('Normalized EEG plot for both  channel') ;
+
+%% Signal Analysis
+% we can see that the Channel 2 are clean EEG signal so we are going to use
+% that as our starting point
+
+M = eegCh2Data' ;
+
+%% Independent Component Analysis
+% let find the covariance matrix
+[D, N] = size(M) ;
+muM = mean(M,2) ;
+muM = repmat(muM , 1 ,N) ;
+M  = M - muM ;
+% first step of ICA : set the mean of M to zero
+
+
+%%
